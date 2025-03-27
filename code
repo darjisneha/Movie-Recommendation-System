@@ -1,0 +1,51 @@
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+# Step 1: Load the datasets
+# Load movie dataset (you can replace this with your own dataset)
+movies = pd.read_csv('movies.csv')  # Assuming you have a 'movies.csv' file
+# Example columns: movieId, title, genres
+
+# Sample data if you don't have a dataset (use your dataset in practice)
+# movies = pd.DataFrame({
+#     'movieId': [1, 2, 3, 4],
+#     'title': ['Movie A', 'Movie B', 'Movie C', 'Movie D'],
+#     'genres': ['Action|Adventure', 'Action|Comedy', 'Drama|Romance', 'Action|Drama']
+# })
+
+# Step 2: Preprocess and prepare the data
+# We'll use the 'genres' column to build the recommendation model.
+movies['genres'] = movies['genres'].fillna('')
+
+# Step 3: Convert the genres into a TF-IDF matrix
+tfidf_vectorizer = TfidfVectorizer(stop_words='english')
+tfidf_matrix = tfidf_vectorizer.fit_transform(movies['genres'])
+
+# Step 4: Compute the cosine similarity between movies based on their genres
+cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
+
+# Step 5: Create a function to recommend movies
+def recommend_movie(movie_title, cosine_sim=cosine_sim):
+    # Get the index of the movie that matches the title
+    idx = movies.index[movies['title'] == movie_title].tolist()[0]
+    
+    # Get pairwise similarity scores for all movies with that movie
+    sim_scores = list(enumerate(cosine_sim[idx]))
+    
+    # Sort the movies based on similarity scores (descending order)
+    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
+    
+    # Get the indices of the top 5 most similar movies
+    sim_scores = sim_scores[1:6]  # Skip the first one, since it's the movie itself
+    movie_indices = [i[0] for i in sim_scores]
+    
+    # Return the top 5 most similar movies
+    return movies['title'].iloc[movie_indices]
+
+# Step 6: Test the recommendation system
+recommended_movies = recommend_movie('Movie A')
+print("Recommended Movies:")
+for movie in recommended_movies:
+    print(movie)
+
